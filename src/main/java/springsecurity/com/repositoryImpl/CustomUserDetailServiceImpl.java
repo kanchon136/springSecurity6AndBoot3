@@ -17,8 +17,6 @@ import springsecurity.com.service.CustomUserDetailsService;
 public class CustomUserDetailServiceImpl implements CustomUserDetailsService {
 	@Autowired
 	private UserRepository repo;
-	
-	 
 
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {

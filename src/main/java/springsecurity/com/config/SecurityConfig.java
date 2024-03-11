@@ -21,6 +21,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
  
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -31,6 +32,10 @@ public class SecurityConfig {
 
     @Autowired private SecurityFilter securityFilter;
     @Autowired private UserDetailsService userDetailsService;
+    @Autowired
+    private UnAuthorizedUserEntryEndpoint authorizedUserEntryEndpoint;
+
+
 
 
 @Bean
@@ -48,14 +53,11 @@ public AuthenticationProvider authenticationProvider(){
 
 }
 
-
 public AuthenticationManager authenticationManager(AuthenticationManagerBuilder builder) throws Exception {
    builder.authenticationProvider(authenticationProvider());
    return builder.build();
 }
 
-
-    
  @Bean
  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 	 return http
@@ -71,12 +73,10 @@ public AuthenticationManager authenticationManager(AuthenticationManagerBuilder 
                  auth.requestMatchers("/error/**").permitAll();
                 auth.requestMatchers("/user/ceateUser","/user/authenticate").permitAll();
                  auth.anyRequest().authenticated();
-             }).addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class).build();
+             }).exceptionHandling(ex-> ex.authenticationEntryPoint(authorizedUserEntryEndpoint))
+             .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class).build();
            //  .httpBasic(Customizer.withDefaults()).build();
-        
     }
-
-
     @Bean
     public AuthenticationManager manager(final AuthenticationConfiguration authenticationConfiguration) throws Exception{
         return authenticationConfiguration.getAuthenticationManager();

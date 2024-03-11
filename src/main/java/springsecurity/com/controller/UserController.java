@@ -1,11 +1,14 @@
 package springsecurity.com.controller;
  
+import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import springsecurity.com.customException.JwtExpiredException;
 import springsecurity.com.dto.UserRequest;
 import springsecurity.com.dto.UserResponse;
 import springsecurity.com.entity.User;
@@ -69,16 +73,25 @@ public User saveUser(@RequestBody User user){
 	return userRepo.save(user);
 }
 
-@PostMapping("/authenticate")
-public ResponseEntity<UserResponse> userLoginAndGetToken(@RequestBody UserRequest userRequest){
+	@PostMapping("/authenticate")
+	public ResponseEntity<UserResponse> userLoginAndGetToken(@RequestBody UserRequest userRequest) {
+		try {
+			UserDetails userDetails = userDetailsService.loadUserByUsername(userRequest.getUserName());
+			Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+					userRequest.getUserName(), userRequest.getPassword()));
 
-	UserDetails userDetails  = userDetailsService.loadUserByUsername(userRequest.getUserName());
-	authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-			userRequest.getUserName(),userRequest.getPassword()
-	));
-	var token = jwtUtil.generateToken(userRequest.getUserName());
-	return ResponseEntity.ok(new UserResponse(token,"Token Generated Successfully",jwtUtil.getClaims(token).getExpiration()));
-
-}
-
+			if (authentication.isAuthenticated()) {
+				var token = jwtUtil.generateToken(userRequest.getUserName());
+				return ResponseEntity.ok(new UserResponse(token, "Token Generated Successfully", jwtUtil.getClaims(token).getExpiration()));
+			} else {
+				return new ResponseEntity<UserResponse>(new UserResponse(null, null, null), HttpStatus.NON_AUTHORITATIVE_INFORMATION);
+			}
+		}catch (ExpiredJwtException ex) {
+			 
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new UserResponse(null, "Token Expired", null));
+		} catch (Exception e) {
+			 
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new UserResponse(null, "Internal Server Error", null));
+		}
+	}
 }
