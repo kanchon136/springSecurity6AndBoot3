@@ -1,9 +1,10 @@
 package springsecurity.com.controller;
  
 import io.jsonwebtoken.ExpiredJwtException;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,17 +18,17 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import springsecurity.com.customException.JwtExpiredException;
 import springsecurity.com.dto.UserRequest;
 import springsecurity.com.dto.UserResponse;
+import springsecurity.com.entity.Test;
 import springsecurity.com.entity.User;
 import springsecurity.com.repository.RoleRepository;
 import springsecurity.com.repository.UserRepository;
 import springsecurity.com.util.JWTUtil;
 
+import java.util.Iterator;
 import java.util.Random;
-
+@Slf4j
 @RestController
 @RequestMapping("/user")
 public class UserController {
@@ -70,7 +71,25 @@ public User saveUser(@RequestBody User user){
 	var passwor=	passwordEncoder.encode(user.getPassword());
 	user.setPassword(passwor);
 	}
-	return userRepo.save(user);
+	Long  startTime = System.currentTimeMillis();
+	
+	 for(int i=0; i<100000; i++) {
+		 userRepo.save(user);
+	 }
+	 Long  EndTine = System.currentTimeMillis();
+	 
+	 log.info("executionTime===="+(EndTine-startTime));
+	//return userRepo.save(user);
+	
+	return null;
+}
+
+
+@PostMapping("saveTest")
+public Test saveTest() {
+	
+	return null;
+	
 }
 
 	@PostMapping("/authenticate")
